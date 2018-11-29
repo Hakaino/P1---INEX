@@ -1,10 +1,7 @@
 #include "ros/ros.h"
-#include "geometry_msgs/Twist.h"
-#include "turtlesim/TeleportAbsolute.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include <iostream>
 #include <fstream>
-#include <std_msgs/Header.h>
 
 void save_my_map(const nav_msgs::OccupancyGrid::ConstPtr& mMap){
 	/*This recieves an OccupancyGrid object and generate a map,
