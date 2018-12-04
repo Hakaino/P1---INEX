@@ -32,6 +32,17 @@ void save_my_map(const nav_msgs::OccupancyGrid::ConstPtr& mMap){
 	ROS_INFO("\nI saved the map ^_^");
 }
 
+//this will be used by the planner to check if it should move to a certain
+bool goodPoint(const nav_msgs::OccupancyGrid::ConstPtr& mMap, int x, int y){
+    unsigned int coast = x + (mMap->info.height - y - 1) * mMap->info.width;
+    if (mMap->data[coast] != 0 && mMap->data[coast] <= 100){
+        //std::string text = "\nThe point (%n, %n) is my next goal!", x, y;
+        //ROS_INFO(text);
+        return true;
+    };
+    return false;
+}
+
 int main(int argc, char *argv[]){
 	ros::init(argc, argv, "inex");
 	ros::NodeHandle nh;
