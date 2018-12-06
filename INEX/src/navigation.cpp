@@ -3,10 +3,16 @@
 #include <math.h>
 #include <vector>
 #include "nav_msgs/OccupancyGrid.h"
+#include <tf/transform_listener.h>
+#include <geometry_msgs/PointStamped.h>
+#include <move_base_msgs/MoveBaseAction.h>
+#include <actionlib/client/simple_action_client.h>
 
+//This render a map and decides the exploration path
 int distance = 10;
 int complexity = 4;
-nav_msgs::OccupancyGrid::ConstPtr mMap; //map pointer
+nav_msgs::OccupancyGrid::ConstPtr mMap;
+typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
 
 void set_map(const nav_msgs::OccupancyGrid::ConstPtr& m){
     //This recieves an OccupancyGrid pointer and makes it global to be used in
@@ -93,10 +99,10 @@ std::vector<int> getAdjacent(int x, int y){ //, std::vector<int> missedPoints){
     return holder;
 }
 
-int* think(int x, int y){
+std::vector<int> think(int x, int y){
     //recieves the last point and seach for the next
     bool clockwise;
-    int next[2];
+    std::vector<int> next(2);
     std::vector<int> adjacent = getAdjacent(x, y);
     //if the point is not mapped, is an objective
     for (int point = 0; point <= adjacent.size(); point += 2) {
@@ -108,7 +114,7 @@ int* think(int x, int y){
     };
     //expand search in the radios of the current point
     int counter = 0;
-    while (!next && counter < 100) {
+    while (next.empty() && counter < 100) {
         if (goodPoint(x + counter * distance, y + counter * distance)){
             next[0] = x + counter * distance;
             next[1] = y + counter * distance;
@@ -127,9 +133,51 @@ int* think(int x, int y){
     return next;
 }
 
+bool set_goal(std::vector<int> point){
+    //tell the action client that we want to spin a thread by default
+    MoveBaseClient ac("move_base", true);
+
+    //wait for the action server to come up
+    while(!ac.waitForServer(ros::Duration(5.0))){
+        ROS_INFO("Waiting for the move_base action server to come up");
+    }
+
+    move_base_msgs::MoveBaseGoal goal;
+
+    //we'll send a goal to the robot to move 1 meter forward
+    goal.target_pose.header.frame_id = "base_link";
+    goal.target_pose.header.stamp = ros::Time::now();
+    goal.target_pose.pose.position.x = point[0];
+    goal.target_pose.pose.position.y = point[1];
+    //goal.target_pose.pose.orientation.w = 1.0;
+    ROS_INFO("Let me plan my path");
+    ac.sendGoal(goal);
+
+    ac.waitForResult();
+
+    if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+        ROS_INFO("Success, moving to the next point");
+        return true;
+    }
+    else{
+        ROS_INFO("Something on my way, i'll go arround...");
+        return false;
+    };
+}
+
 int main(int argc, char *argv[]) {
-    ros::init(argc, argv, "explorer");
+    ros::init(argc, argv, "navigator");
     ros::NodeHandle nh;
     ros::Subscriber map = nh.subscribe("map", 5, set_map);
-    ros::spin();
+    //ros::Publisher goal = nh.advertise();
+    //geometry_msgs::PointStamped
+    tf::TransformListener listener;
+    tf::StampedTransform tran;
+    listener.lookupTransform("/move_base/local_costmap/global_frame",
+                             "/move_base/local_costmap/robot_base_frame", ros::Time::now(), tran);
+    while(ros::ok){
+        std::vector<int> next = think(tran.getOrigin().x(), tran.getOrigin().y());
+        set_goal(next);
+        ros::spin();
+    }
 }
