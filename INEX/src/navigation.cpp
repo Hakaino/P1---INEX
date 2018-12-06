@@ -9,7 +9,32 @@ int complexity = 4;
 nav_msgs::OccupancyGrid::ConstPtr mMap; //map pointer
 
 void set_map(const nav_msgs::OccupancyGrid::ConstPtr& m){
+    //This recieves an OccupancyGrid pointer and makes it global to be used in
+    //"goodPoint", besides that, it renders an updated 2D image of the map.
     mMap = m;
+    std::string  mapName = "/home/dud/ros_ws/src/INEX/map/mars_map.pgm";
+    ROS_INFO("\nNow I will draw the map");
+    FILE* mapFile = fopen(mapName.c_str(), "w");
+    if (!mapFile){
+        ROS_ERROR("\nSorry!!!....I could not save the map :(");
+        return;
+    }
+    fprintf(mapFile, "\P5\n# Mars map, Space program: C2-20, Mission: RobP1-18 %.3f m/pix\n%d %d\n255\n",
+            mMap->info.resolution, mMap->info.width, mMap->info.height);
+    for(unsigned int y = 0; y < mMap->info.height; y++){
+        for(unsigned int x = 0; x < mMap->info.width; x++){
+            unsigned int i = x + (mMap->info.height - y - 1) * mMap->info.width;
+            if (mMap->data[i] == 0){
+                fputc(254, mapFile);
+            } else if (mMap->data[i] == +100){
+                fputc(000, mapFile);
+            } else {
+                fputc(205, mapFile);
+            }
+        }
+    }
+    fclose(mapFile);
+    ROS_INFO("\nI saved the map ^_^");
 }
 
 bool goodPoint(int x, int y){
@@ -83,7 +108,7 @@ int* think(int x, int y){
     };
     //expand search in the radios of the current point
     int counter = 0;
-    while (counter < 100) {
+    while (!next && counter < 100) {
         if (goodPoint(x + counter * distance, y + counter * distance)){
             next[0] = x + counter * distance;
             next[1] = y + counter * distance;
@@ -97,12 +122,9 @@ int* think(int x, int y){
             next[0] = x + counter * distance;
             next[1] = y - counter * distance;
         }
-        counter += distance;
+        counter ++;
     }
     return next;
-    //TODO: translate central point to current point
-    //TODO: find the next point with the previous algorithm
-    //TODO:translate the center to the initial one and continue the search
 }
 
 int main(int argc, char *argv[]) {
