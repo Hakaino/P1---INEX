@@ -50,14 +50,9 @@ void set_map(const nav_msgs::OccupancyGrid::ConstPtr& m){
 bool goodPoint(int x, int y){
     if (debug) ROS_INFO("\tbreakpoint - goodPoint 1");
     unsigned int coast = x + (mMap->info.height - y - 1) * mMap->info.width;
-    if (mMap->data[coast] != 0 && mMap->data[coast] <= 100){
-        //std::string text = "\nThe point (%n, %n) is my next goal!", x, y;
-        //ROS_INFO(text);
-        return true;
-    if (debug) ROS_INFO("\tbreakpoint - goodPoint x");
-    };
     if (debug) ROS_INFO("\tbreakpoint - goodPoint 2");
-    return false;
+    //first check if it is out of the map borders or if inside is not maped
+    if (mMap->info.height < y && mMap->info.width < x || mMap->data[coast] != 0 && mMap->data[coast] <= 100) return true; else return false;
 }
 
 std::vector<int> getAdjacent(int x, int y){ //, std::vector<int> missedPoints){
@@ -80,6 +75,7 @@ std::vector<int> getAdjacent(int x, int y){ //, std::vector<int> missedPoints){
     else teta = atan(y / x);
     double delta = 2 * M_PI / N;
     //Get the points from the lower level inside the angle
+    if (L > 0){
     n = (L - 1) * complexity;
     if (debug) ROS_INFO("\tbreakpoint - getAdjacent 3");
     for (int i = 0; i < n; i++){
@@ -95,6 +91,7 @@ std::vector<int> getAdjacent(int x, int y){ //, std::vector<int> missedPoints){
     holder.push_back(int(L * distance * sin(teta + delta)));
     holder.push_back(int(L * distance * cos(teta - delta)));
     holder.push_back(int(L * distance * sin(teta - delta)));
+    };
     //get the upper level points in angle
     n = (L + 1) * complexity;
     if (debug) ROS_INFO("\tbreakpoint - getAdjacent 5");
@@ -113,8 +110,9 @@ std::vector<int> getAdjacent(int x, int y){ //, std::vector<int> missedPoints){
         if (holder[i] != holder[i - 2] && holder[i + 1] != holder[i - 1]){
             adjacent.push_back(holder[i]);
             adjacent.push_back(holder[i - 1]);
-        } else ROS_INFO("not eficient yet, getAdjacent repeats a point");
+        };// else ROS_INFO("not eficient yet, getAdjacent repeats a point");
     if (debug) ROS_INFO("\tbreakpoint - getAdjacent 7");
+    //for (int i= 0; i < holder.size() - 1; i += 2) std::cout << "\n\t" << holder[i] << ", " << holder[i + 1] << std::endl;
     return holder;
 }
 
@@ -126,9 +124,11 @@ std::vector<int> think(float x, float y){
     if (debug) ROS_INFO("\tbreakpoint - think 2");
     //if the point is not mapped, is an objective
     for (int point = 0; point <= adjacent.size(); point += 2) {
+        std::cout << "\n............checking if point is good: " << adjacent[point] << ", " << adjacent[point + 1] << std::endl;
         if (goodPoint(adjacent[point], adjacent[point + 1])) {
             next[0] = adjacent[point];
             next[1] = adjacent[point + 1];
+        std::cout << "\n............in" << std::endl; 
             return next;
         };
     };
@@ -155,7 +155,7 @@ std::vector<int> think(float x, float y){
     return next;
 }
 
-bool set_goal(std::vector<int> point){
+bool set_goal(int x, int y){
     MoveBaseClient ac("move_base", true);
     while(!ac.waitForServer(ros::Duration(5.0))){
         ROS_INFO("Waiting for the move_base action server to come up");
@@ -163,8 +163,9 @@ bool set_goal(std::vector<int> point){
     move_base_msgs::MoveBaseGoal goal;
     goal.target_pose.header.frame_id = "base_link";
     goal.target_pose.header.stamp = ros::Time::now();
-    goal.target_pose.pose.position.x = point[0];
-    goal.target_pose.pose.position.y = point[1];
+    goal.target_pose.pose.position.x = x;
+    goal.target_pose.pose.position.y = y;
+    std::cout << "my goal is " << x << ", " << y << "\n"; 
     ROS_INFO("Let me plan my path");
     ac.sendGoal(goal);
     ac.waitForResult();
@@ -181,19 +182,22 @@ return true;
 
 int main(int argc, char *argv[]) {
     ros::init(argc, argv, "navigator");
+    ROS_INFO("\n\n\tHello Mars! Let's find the E.T.\n\n");
     ros::NodeHandle nh;
-    ros::Subscriber map = nh.subscribe("map", 5, set_map);
-    ros::Duration(10.0).sleep();
+    ros::Subscriber map = nh.subscribe("map", 1, set_map);
+    ros::spinOnce();
     //tf::TransformListener listener;
     //tf::StampedTransform tran;
     //listener.lookupTransform("/move_base/local_costmap/global_frame",
     //                         "/move_base/local_costmap/robot_base_frame", ros::Time::now(), tran);
     if (debug) ROS_INFO("breakpoint - Main 1");
 
-    while(ros::ok){
+    //while(ros::ok){
         std::vector<int> next = think(mainX, mainY); //tran.getOrigin().x(), tran.getOrigin().y());
         ROS_INFO("breakpoint - Main 2");
-        set_goal(next);
+	std::cout << "..............." << next[0] << ", " << next[1] << "\n";
+        set_goal(next[0], next[1]);
+        ROS_INFO("breakpoint - Main 3");
         ros::spin();
-    }
+    //}
 }
