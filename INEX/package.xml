@@ -1,11 +1,22 @@
-<?xml version="1.0"?>
+<?xml version="0.1"?>
 <package format="2">
-  <name>inex</name> <!-- The name of the package -->
-  <version>0.0.0</version> <!-- The version number of the package (required to be 3 dot-separated integers) -->
-  <description>Interplanetary Exploration Vehicle navigation automation software</description> <!-- A description of the package contents-->
-  <maintainer email="malema18@student.aau.dk">Marco Alemão, Philip Lund Møller, Damián Leporis, Andrei Voica, Jakob Hoy, Dominika Góral, Manuela Gonçalves</maintainer> <!-- The name of the person(s) that is/are maintaining the package -->
-  <license>MIT</license> <!-- [I don't know if the MIT license is required for ROS] The software license(s) (e.g. GPL, BSD, ASL) under which the code is released.-->
-  <depend>roscpp</depend>
-  <depend>turtlesim</depend>
+  <name>inex</name>
+  <version>0.0.1</version>
+  <description>Interplanetary exploration vehicle navigation automation system</description>
+  <maintainer email="malema18@student.aau.dk">Marco Alemao, Philip Moller, Andrei Voica, Dominika Goral, Jakob Hoy, Manuela Mendes, Damian Leporis</maintainer> <!-- The name of the person(s) that is/are maintaining the package -->
+  <license>BSD</license>
+
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>image_transport</build_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>move_base</exec_depend>  
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>opencv2</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>libuvc_camera</exec_depend>
 </package>
