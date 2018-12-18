@@ -1,0 +1,11 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch" />
+  <include file="$(find turtlebot_navigation)/launch/gmapping_demo.launch" />
+  <include file="$(find explore_lite)/launch/explore.launch" />
+  <node name="save_image_node" pkg="inex" type="image_node" />
+  <node name="color_detection_node" pkg="inex" type="color_detection" />
+  <node name="inex_node" pkg="inex" type="inex" />
+</launch>
