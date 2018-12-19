@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
                 ROS_INFO("requesting data transmission");
                 cmd_pub.publish(command);
 		ros::Duration(10.0).sleep();
-                std::system("/home/dud/ros_ws/src/INEX/src/recieve.sh");
+                std::system("/home/wizard/Documents/Livros/Escola/AAU/P1/Development/Ros/src/remote/src/get.sh");
 	    }
             else if (command.data == 'q' || command.data == 'Q'){
                 ROS_INFO("Now I'm going to catch some Z's ... ZZZ ZZZ ZZZ");
