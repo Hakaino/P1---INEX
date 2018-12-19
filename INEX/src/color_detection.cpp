@@ -13,6 +13,8 @@ bool anomaly = false;
 
 double x_pose;
 double y_pose;
+double prev_x = 0;
+double prev_y = 0;
 char filename[80];
 
 class ImageConverter{
@@ -64,9 +66,17 @@ public:
   for(int i = 0; i< contours.size(); i++ ){
     double area = contourArea(contours[i],false);
     if(area>largest_area && area<lowest_area){
-      sprintf(filename,"/home/dud/ros_ws/src/INEX/anomalies/x:%f_y:%f.png", x_pose, y_pose);
-      cv::imwrite(filename,cv_ptr->image);
-      anomaly = true;
+	if(x_pose>prev_x+0.5 || x_pose<prev_x-0.5){
+      	sprintf(filename,"/home/dud/ros_ws/src/INEX/anomalies/x:%f_y:%f.png", x_pose, y_pose);
+      	cv::imwrite(filename,cv_ptr->image);
+     	anomaly = true;
+	}
+	if(y_pose>prev_y+0.5 || y_pose<prev_y-0.5){
+        sprintf(filename,"/home/dud/ros_ws/src/INEX/anomalies/x:%f_y:%f.png", x_pose, y_pose);
+        cv::imwrite(filename,cv_ptr->image);
+        anomaly = true;
+        }
+
     }
   }
    image_pub_.publish(cv_ptr->toImageMsg());
@@ -80,6 +90,8 @@ void clbk_asd(const nav_msgs::Odometry::ConstPtr& asd){
   y_pose = asd->pose.pose.position.y;
   if(anomaly){
     ROS_INFO("Anomaly detected at: x: %f, y: %f",x_pose, y_pose);
+    prev_x = x_pose;
+    prev_y = y_pose;
     anomaly = false;
     return;
   }
@@ -88,6 +100,7 @@ void clbk_asd(const nav_msgs::Odometry::ConstPtr& asd){
 int main(int argc, char** argv){
  ros::init(argc, argv, "color_detection");
  ros::NodeHandle n;
+ ros::Duration(3.0).sleep();
  ImageConverter ic;
  ros::spinOnce();
  odom_sub_ = n.subscribe("/odom", 1, clbk_asd);
