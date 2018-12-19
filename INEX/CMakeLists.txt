@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   std_msgs
+  kobuki_msgs
 )
 catkin_package()
 include_directories(
